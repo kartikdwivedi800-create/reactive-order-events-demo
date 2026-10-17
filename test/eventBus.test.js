@@ -93,3 +93,16 @@ test('on() rejects non-function handlers', () => {
   assert.throws(() => bus.on('x', undefined), TypeError);
   assert.throws(() => bus.on('x', 'nope'), TypeError);
 });
+
+test('empty handler sets are evicted after last unsubscribe', () => {
+  const bus = new EventBus();
+  const calls = [];
+  const off = bus.on('order.1', () => calls.push(1));
+  off();
+  bus.emit('order.1');
+  assert.deepEqual(calls, []);
+  // resubscribing after eviction still works
+  bus.on('order.1', () => calls.push(2));
+  bus.emit('order.1');
+  assert.deepEqual(calls, [2]);
+});

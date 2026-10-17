@@ -7,9 +7,14 @@ export class EventBus {
     // Each registration gets its own entry, so registering the same function
     // twice yields two independent subscriptions with independent unsubscribes.
     const entry = { handler };
-    if (!this.#handlers.has(type)) this.#handlers.set(type, new Set());
-    this.#handlers.get(type).add(entry);
-    return () => this.#handlers.get(type)?.delete(entry);
+    let set = this.#handlers.get(type);
+    if (!set) this.#handlers.set(type, (set = new Set()));
+    set.add(entry);
+    return () => {
+      set.delete(entry);
+      // Drop the empty Set so per-entity event types do not accumulate.
+      if (set.size === 0 && this.#handlers.get(type) === set) this.#handlers.delete(type);
+    };
   }
 
   emit(type, payload) {
