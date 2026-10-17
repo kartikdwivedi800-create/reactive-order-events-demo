@@ -87,3 +87,9 @@ test('duplicate registration has independent unsubscribes', () => {
   bus.emit('x');
   assert.equal(n, 4);
 });
+
+test('on() rejects non-function handlers', () => {
+  const bus = new EventBus();
+  assert.throws(() => bus.on('x', undefined), TypeError);
+  assert.throws(() => bus.on('x', 'nope'), TypeError);
+});
