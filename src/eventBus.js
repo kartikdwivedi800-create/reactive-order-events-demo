@@ -9,6 +9,8 @@ export class EventBus {
   }
 
   emit(type, payload) {
-    for (const handler of this.#handlers.get(type) ?? []) handler(payload);
+    for (const handler of [...(this.#handlers.get(type) ?? [])]) {
+      try { handler(payload); } catch (err) { console.error(`handler for ${type} failed`, err); }
+    }
   }
 }
