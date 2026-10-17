@@ -30,3 +30,26 @@ test('unsubscribe stops delivery', () => {
   bus.emit('x');
   assert.equal(n, 1);
 });
+
+test('subscribers get a snapshot, not the live order', async () => {
+  const bus = new EventBus();
+  const svc = new OrderService(bus);
+  let seen;
+  bus.on(OrderEvents.CREATED, async (o) => {
+    await Promise.resolve();
+    seen = o.status;
+    o.status = 'SHIPPED';
+    o.items.push('hacked');
+  });
+  const { id } = svc.create(['a']);
+  svc.pay(id);
+  await new Promise((r) => setImmediate(r));
+  assert.equal(seen, 'CREATED');
+  assert.equal(svc.get(id).status, 'PAID');
+  assert.deepEqual(svc.get(id).items, ['a']);
+});
+
+test('create rejects missing or empty items', () => {
+  const svc = new OrderService(new EventBus());
+  for (const bad of [undefined, null, [], 'abc']) assert.throws(() => svc.create(bad), TypeError);
+});
